@@ -13,33 +13,33 @@
         'parallaxBackgrounds': true,
         'parallaxElements': true,
         'hideDistantElements': true,
-        'hideElement': function(elem) { elem[0].style.display = 'none'; },
-        'showElement': function(elem) { elem[0].style.display = 'block'; }
+        'hideElement': function(elem) { elem.style.display = 'none'; },
+        'showElement': function(elem) { elem.style.display = 'block'; }
       },
 
       scrollProperty = {
         'scroll': {
-          'getLeft': function($elem) { return $elem[0].pageXOffset; }, // return $elem.scrollLeft();
-          'setLeft': function($elem, val) { $elem[0].pageXOffset = val; }, // $elem.scrollLeft(val);
+          'getLeft': function(elem) { return elem.pageXOffset; }, // return $elem.scrollLeft();
+          'setLeft': function(elem, val) { elem.pageXOffset = val; }, // $elem.scrollLeft(val);
 
-          'getTop': function($elem) { return $elem[0].pageYOffset; }, // return $elem.scrollTop();
-          'setTop': function($elem, val) { $elem[0].pageYOffset = val; } // $elem.scrollTop(val);
+          'getTop': function(elem) { return elem.pageYOffset; }, // return $elem.scrollTop();
+          'setTop': function(elem, val) { elem.pageYOffset = val; } // $elem.scrollTop(val);
         },
         'position': {
-          'getLeft': function($elem) { return parseInt($elem[0].style.left, 10) * -1; },
-          'getTop': function($elem) { return parseInt($elem[0].style.top, 10) * -1; }
+          'getLeft': function(elem) { return parseInt(elem.style.left, 10) * -1; },
+          'getTop': function(elem) { return parseInt(elem.style.top, 10) * -1; }
         },
         'margin': {
-          'getLeft': function($elem) { return parseInt($elem[0].style.marginLeft, 10) * -1; },
-          'getTop': function($elem) { return parseInt($elem[0].style.marginTop, 10) * -1; }
+          'getLeft': function(elem) { return parseInt(elem.style.marginLeft, 10) * -1; },
+          'getTop': function(elem) { return parseInt(elem.style.marginTop, 10) * -1; }
         },
         'transform': {
-          'getLeft': function($elem) {
-            var computedTransform = getComputedStyle($elem[0])[prefixedTransform];
+          'getLeft': function(elem) {
+            var computedTransform = getComputedStyle(elem)[prefixedTransform];
             return (computedTransform !== 'none' ? parseInt(computedTransform.match(/(-?[0-9]+)/g)[4], 10) * -1 : 0);
           },
-          'getTop': function($elem) {
-            var computedTransform = getComputedStyle($elem[0])[prefixedTransform];
+          'getTop': function(elem) {
+            var computedTransform = getComputedStyle(elem)[prefixedTransform];
             return (computedTransform !== 'none' ? parseInt(computedTransform.match(/(-?[0-9]+)/g)[5], 10) * -1 : 0);
           }
         }
@@ -47,12 +47,12 @@
 
       positionProperty = {
         'position': {
-          'setLeft': function($elem, left) {$elem[0].style.left = parseFloat(left) + 'px'; },
-          'setTop': function($elem, top) { $elem[0].style.top = parseFloat(top) + 'px'; }
+          'setLeft': function(elem, left) {elem.style.left = parseFloat(left) + 'px'; },
+          'setTop': function(elem, top) { elem.style.top = parseFloat(top) + 'px'; }
         },
         'transform': {
-          'setPosition': function($elem, left, startingLeft, top, startingTop) {
-            $elem[0].style[prefixedTransform] = 'translate3d(' + (left - startingLeft) + 'px, ' + (top - startingTop) + 'px, 0)';
+          'setPosition': function(elem, left, startingLeft, top, startingTop) {
+            elem.style[prefixedTransform] = 'translate3d(' + (left - startingLeft) + 'px, ' + (top - startingTop) + 'px, 0)';
           }
         }
       },
@@ -86,24 +86,24 @@
       prefixedTransform = prefix + 'transform',
 
       setBackgroundPosition = (supportsBackgroundPositionXY ?
-        function($elem, x, y) {
-          $elem[0].style['background-position-x'] = x;
-          $elem[0].style['background-position-y'] = y;
+        function(elem, x, y) {
+          elem.style['background-position-x'] = x;
+          elem.style['background-position-y'] = y;
         } :
-        function($elem, x, y) {
-          $elem[0].style['background-position'] = x + ' ' + y;
+        function(elem, x, y) {
+          elem.style['background-position'] = x + ' ' + y;
         }
       ),
 
       getBackgroundPosition = (supportsBackgroundPositionXY ?
-        function($elem) {
+        function(elem) {
           return [
-            $elem[0].style['background-position-x'],
-            $elem[0].style['background-position-y']
+            elem.style['background-position-x'],
+            elem.style['background-position-y']
           ];
         } :
-        function($elem) {
-          return $elem[0].style['background-position'].split(' ');
+        function(elem) {
+          return elem.style['background-position'].split(' ');
         }
       ),
 
@@ -115,9 +115,33 @@
           };
       }());
 
+
+  function extend(dest) {
+    var sources = [].slice.call(arguments, 1),
+        i = 0,
+        len = sources.length,
+        source,
+        prop;
+
+    for (i; len > i; i += 1) {
+      source = sources[i];
+
+      for (prop in source) {
+        if (source[prop] !== undefined) {
+          dest[prop] = source[prop];
+        }
+      }
+    }
+
+    return dest;
+  };
+
   function Plugin(element, options) {
+    options = options || {};
+    this.options = extend({}, defaults);
+    extend(this.options, options);
+
     this.element = element;
-    this.options = $.extend({}, defaults, options);
     this._defaults = defaults;
     this._name = pluginName;
     this.init();
@@ -133,7 +157,7 @@
       this._handleWindowLoadAndResize();
       this._detectViewport();
 
-      this.refresh({ firstLoad: true });
+      this.refresh({ 'firstLoad': true });
 
       if (this.options.scrollProperty === 'scroll') {
         this._handleScrollEvent();
@@ -142,7 +166,7 @@
       }
     },
     _defineElements: function() {
-      if (this.element === document.body) this.element = window;
+      if (this.element === document.body) { this.element = window; }
       this.$scrollElement = $(this.element);
       this.$element = (this.element === window ? $('body') : this.$scrollElement);
       this.$viewportElement = (this.options.viewportElement !== undefined ? $(this.options.viewportElement) : (this.$scrollElement[0] === window || this.options.scrollProperty === 'scroll' ? this.$scrollElement : this.$scrollElement.parent()) );
@@ -152,11 +176,11 @@
         scrollPropertyAdapter = scrollProperty[self.options.scrollProperty];
 
       this._getScrollLeft = function() {
-        return scrollPropertyAdapter.getLeft(self.$scrollElement);
+        return scrollPropertyAdapter.getLeft(self.element);
       };
 
       this._getScrollTop = function() {
-        return scrollPropertyAdapter.getTop(self.$scrollElement);
+        return scrollPropertyAdapter.getTop(self.element);
       };
     },
     _defineSetters: function() {
@@ -167,21 +191,21 @@
         setScrollTop = scrollPropertyAdapter.setTop;
 
       this._setScrollLeft = (typeof setScrollLeft === 'function' ? function(val) {
-        setScrollLeft(self.$scrollElement, val);
+        setScrollLeft(self.element, val);
       } : $.noop);
 
       this._setScrollTop = (typeof setScrollTop === 'function' ? function(val) {
-        setScrollTop(self.$scrollElement, val);
+        setScrollTop(self.element, val);
       } : $.noop);
 
       this._setPosition = positionPropertyAdapter.setPosition ||
-        function($elem, left, startingLeft, top, startingTop) {
+        function(elem, left, startingLeft, top, startingTop) {
           if (self.options.horizontalScrolling) {
-            positionPropertyAdapter.setLeft($elem, left, startingLeft);
+            positionPropertyAdapter.setLeft(elem, left, startingLeft);
           }
 
           if (self.options.verticalScrolling) {
-            positionPropertyAdapter.setTop($elem, top, startingTop);
+            positionPropertyAdapter.setTop(elem, top, startingTop);
           }
         };
     },
@@ -284,7 +308,7 @@
           return;
         }
 
-        self.options.showElement($this);
+        self.options.showElement(this);
 
         // Save/restore the original top and left CSS values in case we refresh the particles or destroy the instance
         if (!$this.data('stellar-startingLeft')) {
@@ -363,7 +387,7 @@
 
       $backgroundElements.each(function() {
         var $this = $(this),
-          backgroundPosition = getBackgroundPosition($this),
+          backgroundPosition = getBackgroundPosition(this),
           horizontalOffset,
           verticalOffset,
           positionLeft,
@@ -390,7 +414,7 @@
           $this.data('stellar-backgroundStartingLeft', backgroundPosition[0]);
           $this.data('stellar-backgroundStartingTop', backgroundPosition[1]);
         } else {
-          setBackgroundPosition($this, $this.data('stellar-backgroundStartingLeft'), $this.data('stellar-backgroundStartingTop'));
+          setBackgroundPosition(this, $this.data('stellar-backgroundStartingLeft'), $this.data('stellar-backgroundStartingTop'));
         }
 
         // Catch-all for margin top/left properties (these evaluate to 'auto' in IE7 and IE8)
@@ -452,9 +476,9 @@
         startingPositionLeft = particle.$element.data('stellar-startingLeft');
         startingPositionTop = particle.$element.data('stellar-startingTop');
 
-        this._setPosition(particle.$element, startingPositionLeft, startingPositionLeft, startingPositionTop, startingPositionTop);
+        this._setPosition(particle.$element[0], startingPositionLeft, startingPositionLeft, startingPositionTop, startingPositionTop);
 
-        this.options.showElement(particle.$element);
+        this.options.showElement(particle.$element[0]);
 
         particle.$element.data('stellar-startingLeft', null).data('stellar-elementIsActive', null).data('stellar-backgroundIsActive', null);
       }
@@ -464,7 +488,7 @@
 
         background.$element.data('stellar-backgroundStartingLeft', null).data('stellar-backgroundStartingTop', null);
 
-        setBackgroundPosition(background.$element, background.startingValueLeft, background.startingValueTop);
+        setBackgroundPosition(background.$element[0], background.startingValueLeft, background.startingValueTop);
       }
     },
     destroy: function() {
@@ -562,10 +586,10 @@
             particle.isHidden = false;
           }
 
-          this._setPosition(particle.$element, newPositionLeft, particle.startingPositionLeft, newPositionTop, particle.startingPositionTop);
+          this._setPosition(particle.$element[0], newPositionLeft, particle.startingPositionLeft, newPositionTop, particle.startingPositionTop);
         } else {
           if (!particle.isHidden) {
-            this.options.hideElement(particle.$element);
+            this.options.hideElement(particle.$element[0]);
             particle.isHidden = true;
           }
         }
@@ -579,7 +603,7 @@
         bgLeft = (this.options.horizontalScrolling ? (scrollLeft + background.horizontalOffset - this.viewportOffsetLeft - background.startingOffsetLeft + background.parentOffsetLeft - background.startingBackgroundPositionLeft) * (fixedRatioOffset - background.stellarRatio) + 'px' : background.startingValueLeft);
         bgTop = (this.options.verticalScrolling ? (scrollTop + background.verticalOffset - this.viewportOffsetTop - background.startingOffsetTop + background.parentOffsetTop - background.startingBackgroundPositionTop) * (fixedRatioOffset - background.stellarRatio) + 'px' : background.startingValueTop);
 
-        setBackgroundPosition(background.$element, bgLeft, bgTop);
+        setBackgroundPosition(background.$element[0], bgLeft, bgTop);
       }
     },
     _handleScrollEvent: function() {
